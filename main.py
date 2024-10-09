@@ -1,5 +1,25 @@
 import pandas as pd
 import fitz
+from flask import Flask, request, send_file, render_template
+import os
+
+app = Flask(__name__)
+
+def render_to_image(filled_form, zoom=2):
+    """
+    Renders the filled PDF form to images and saves them as new PDFs.
+    """
+    temp_pdf = fitz.open()  # Create a new PDF
+    for page_number in range(len(filled_form)):
+        page = filled_form[page_number]
+        # Render page to an image
+        pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom))  # Zoom for better quality
+        img_pdf = fitz.open()  # New PDF for this page
+        img_page = img_pdf.new_page(width=pix.width, height=pix.height)  # Create a new page
+        img_page.insert_image(img_page.rect, stream=pix.tobytes())  # Insert image into the new page
+        temp_pdf.insert_pdf(img_pdf)  # Insert the image PDF into the temp PDF
+
+    return temp_pdf
 
 def read_excel(excel:str):
     """
@@ -131,19 +151,44 @@ def fill_CANS(general_values:dict, form_values:dict):
 
     return template
 
-def produce_output(dictionaries:dict[dict]):
+def produce_output(master:dict[dict]):
     """
     Calls fill_form function for each dictionary in dictionaries and combines pdfs to final file. 
     """
-    pass
+    combined = fitz.open() # new document
+    for key in master.keys():
+        if key != 'GENERAL':
+            function_name = globals().get(f"fill_{key}")
+            if function_name:
+                filled_form = function_name(master['GENERAL'], master[key])
+                rendered_pdf = render_to_image(filled_form) # this is a workaround to fuse field values to page 
+                combined.insert_pdf(rendered_pdf) # append to combined
+    return combined
 
-master = read_excel('Book1.xlsx')
+@app.route('/')
+def index():
+    return render_template('upload.html')  # Simple upload form
 
-#for key in master.keys():
-#    if key != 'GENERAL':
-#        writer = PdfWriter()
-#        writer.addpages(fill_form(master['GENERAL'], master[key], 'forms/'+ key + '.pdf'))
-#        writer.write(key + '.pdf')
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return "No file part", 400
+    file = request.files['file']
+    if file.filename == '':
+        return "No selected file", 400
 
-output_template = fill_CANS(master['GENERAL'], master['CANS'])
-output_template.save('CANS.pdf')
+    # Process the uploaded file
+    master = read_excel(file.stream)  # Read Excel from the uploaded file
+    final_document = produce_output(master)
+    
+    # Save the output PDF
+    output_path = 'output/new.pdf'
+    if not os.path.exists('output'):
+        os.makedirs('output')
+    
+    final_document.save(output_path)
+    
+    return send_file(output_path, as_attachment=True)
+
+if __name__ == '__main__':
+    app.run(debug=True)

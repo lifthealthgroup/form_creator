@@ -53,6 +53,15 @@ def fill_textboxes(general_values:dict, form_values:dict, template):
                 field.update()
     return template
 
+def highlight(x0, y0, x1, y1, page):
+    """
+    Highlights the area on template defined by coords x0, y0, x1, y1
+    """
+    rect = fitz.Rect(x0, y0, x1, y1) # create rectangle object
+    highlight = page.add_highlight_annot(rect) # Add a highlight annotation to the defined box
+    highlight.update() # save changes
+    return page
+    
 def fill_WHODAS(general_values:dict, form_values:dict):
     """
     Inserts values from dictionary in correct fields in WHODAS pdf file.
@@ -148,6 +157,49 @@ def fill_CANS(general_values:dict, form_values:dict):
                 elif form_values[int(key[1:])].upper() == 'N' and key[:1] == 'N':
                     field.field_value = True  # Set checkbox to checked
                 field.update()
+
+    return template
+
+def fill_LSP(general_values:dict, form_values:dict):
+    """
+    Inserts values from dictionary in correct fields in LSP pdf file.
+    """
+    template = fitz.open('forms/LSP.pdf') # read in template pdf
+    
+    # define coordinates of grid layout on LSP page 1
+    x = [550, 670, 792, 912, 1034]
+    x = [px * (72 / 140) for px in x] # convert pixels to coordinates. dpi = 140
+    y = [328,380,454,506,580,652,744,778,892,944,1038,1090,1164,1236,1288,1320,1394]
+    y = [px * (72 / 140) for px in y]
+
+    # highlight correct box for each row
+    page = template.load_page(0)
+    for i in range(16):
+        score = form_values[i + 1]
+        if score == 0:
+            page = highlight(x[0] + 10, y[i], x[1] - 10, y[i + 1], page) # bring in the highlight slightly due to formatting
+        elif score == 1:
+            page = highlight(x[1] + 10, y[i], x[2] - 10, y[i + 1], page) # bring in the highlight slightly due to formatting
+        elif score == 2:
+            page = highlight(x[2] + 10, y[i], x[3] - 10, y[i + 1], page) # bring in the highlight slightly due to formatting
+        elif score == 3:
+            page = highlight(x[3] + 10, y[i], x[4] - 10, y[i + 1], page) # bring in the highlight slightly due to formatting
+    
+    # perform scoring
+    form_values['a_score'] = int(form_values[1] + form_values[2] + form_values[3] + form_values[8])
+    form_values['b_score'] = int(form_values[4] + form_values[5] + form_values[6] + form_values[9] + form_values[16])
+    form_values['c_score'] = int(form_values[10] + form_values[11] + form_values[12])
+    form_values['d_score'] = int(form_values[7] + form_values[13] + form_values[14] + form_values[15])
+    
+    total = form_values['a_score'] + form_values['b_score'] + form_values['c_score'] + form_values['d_score']
+    form_values['total'] = "Total Score:  " + str(total) + "/80 = " + str(total * 1.25) + "/100"
+    
+    form_values['a_score'] = str(form_values['a_score']) + "/12"
+    form_values['b_score'] = str(form_values['b_score']) + "/15"
+    form_values['c_score'] = str(form_values['c_score']) + "/9" 
+    form_values['d_score'] = str(form_values['d_score']) + "/12"
+    
+    template = fill_textboxes(general_values, form_values, template) # fill out textboxes
 
     return template
 

@@ -53,7 +53,7 @@ def fill_textboxes(general_values:dict, form_values:dict, template):
                 field.update()
     return template
 
-def highlight(x0, y0, x1, y1, page):
+def highlight_box(x0, y0, x1, y1, page):
     """
     Highlights the area on template defined by coords x0, y0, x1, y1
     """
@@ -62,6 +62,23 @@ def highlight(x0, y0, x1, y1, page):
     highlight.update() # save changes
     return page
     
+def highlight_text(string:str, template):
+    """
+    Highlights the text on template defined by string
+    """ 
+    
+    for page_num in range(template.page_count): # search each page
+        page = template.load_page(page_num)
+        
+        text_instances = page.search_for(string) # find all instances of string
+        
+        # add highlight and update for each string
+        for inst in text_instances:
+            highlight = page.add_highlight_annot(inst)
+            highlight.update()   
+    
+    return template     
+
 def fill_WHODAS(general_values:dict, form_values:dict):
     """
     Inserts values from dictionary in correct fields in WHODAS pdf file.
@@ -177,13 +194,13 @@ def fill_LSP(general_values:dict, form_values:dict):
     for i in range(16):
         score = form_values[i + 1]
         if score == 0:
-            page = highlight(x[0] + 10, y[i], x[1] - 10, y[i + 1], page) # bring in the highlight slightly due to formatting
+            page = highlight_box(x[0] + 10, y[i], x[1] - 10, y[i + 1], page) # bring in the highlight slightly due to formatting
         elif score == 1:
-            page = highlight(x[1] + 10, y[i], x[2] - 10, y[i + 1], page) # bring in the highlight slightly due to formatting
+            page = highlight_box(x[1] + 10, y[i], x[2] - 10, y[i + 1], page) # bring in the highlight slightly due to formatting
         elif score == 2:
-            page = highlight(x[2] + 10, y[i], x[3] - 10, y[i + 1], page) # bring in the highlight slightly due to formatting
+            page = highlight_box(x[2] + 10, y[i], x[3] - 10, y[i + 1], page) # bring in the highlight slightly due to formatting
         elif score == 3:
-            page = highlight(x[3] + 10, y[i], x[4] - 10, y[i + 1], page) # bring in the highlight slightly due to formatting
+            page = highlight_box(x[3] + 10, y[i], x[4] - 10, y[i + 1], page) # bring in the highlight slightly due to formatting
     
     # perform scoring
     form_values['a_score'] = int(form_values[1] + form_values[2] + form_values[3] + form_values[8])
@@ -203,6 +220,27 @@ def fill_LSP(general_values:dict, form_values:dict):
 
     return template
 
+def fill_LAWTON(general_values:dict, form_values:dict):
+    """
+    Inserts values from dictionary in correct fields in LAWTON pdf file.
+    """
+    template = fitz.open('forms/LAWTON.pdf') # read in template pdf
+    with open('lawton.txt', 'r') as file:     
+        sections = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+        i = 0 # counter
+        for line in file:
+            options = line.split('/')
+            template = highlight_text(options[int(form_values[sections[i]]) - 1], template) # highlight relevant number for each column
+            i += 1 # increment
+    
+    form_values['left_total'] = form_values['A'] + form_values['B'] + form_values['C'] + form_values['D']
+    form_values['right_total'] = form_values['E'] + form_values['F'] + form_values['G'] + form_values['H']
+    form_values['total'] = form_values['left_total'] + form_values['right_total']
+    
+    template = fill_textboxes(general_values, form_values, template)
+    
+    return template
+        
 def produce_output(master:dict[dict]):
     """
     Calls fill_form function for each dictionary in dictionaries and combines pdfs to final file. 

@@ -3,6 +3,7 @@ import fitz
 from flask import Flask, request, send_file, render_template
 import os
 import math
+import difflib
 
 app = Flask(__name__)
 
@@ -36,6 +37,9 @@ def read_excel(excel:str):
             dict_name = col.replace(' Values', '') # dictionary key name
             master[dict_name] = pd.Series(df[col].values, index=df[dict_name]).to_dict() # place dictionary in dictionary
             master[dict_name] = {k:int(v) if isinstance(v, float) and not math.isnan(v) else v for k, v in master[dict_name].items()} # convert values to integers where possible 
+    
+    master['GENERAL']['patient_name'] = master['GENERAL']['patient_first_name'] + master['GENERAL']['patient_surname']
+    
     return master # which contains all info needed to fill forms
 
 def fill_textboxes(general_values:dict, form_values:dict, template):
@@ -45,18 +49,19 @@ def fill_textboxes(general_values:dict, form_values:dict, template):
     for page in template:
         for field in page.widgets(): # iterate through fields on each page
             key = field.field_name
-            if key in form_values: # add form values
-                field.field_value = str(form_values[key])
-                field.update()
-            if key in general_values: # add general values
-                field.field_value = str(general_values[key])
-                field.update()
-            try: # in case form_values has float valued keys (for LSP)
-                if float(key) in form_values:
-                    field.field_value = str(int(form_values[float(key)]))
+            if field.field_type != fitz.PDF_WIDGET_TYPE_CHECKBOX:
+                if key in form_values: # add form values
+                    field.field_value = str(form_values[key])
                     field.update()
-            except Exception:
-                pass
+                if key in general_values: # add general values
+                    field.field_value = str(general_values[key])
+                    field.update()
+                try: # in case form_values has float valued keys (for LSP)
+                    if float(key) in form_values:
+                        field.field_value = str(int(form_values[float(key)]))
+                        field.update()
+                except Exception:
+                    pass
     return template
 
 def highlight_box(x0, y0, x1, y1, page):
@@ -68,7 +73,7 @@ def highlight_box(x0, y0, x1, y1, page):
     highlight.update() # save changes
     return page
     
-def highlight_text(string:str, template):
+def highlight_text(string:str, template, ins_no=0, case_sensitive=True):
     """
     Highlights the text on template defined by string
     """ 
@@ -78,9 +83,18 @@ def highlight_text(string:str, template):
         
         text_instances = page.search_for(string) # find all instances of string
         
+        if case_sensitive == True: # filter if case-sensitive
+            final_instances = []
+            for inst in text_instances:                
+                if string in page.get_text("text", clip=inst): # compare texts 
+                    final_instances.append(inst)
+        else:
+            final_instances = text_instances
+        
+        
         # add highlight and update for each string
-        for inst in text_instances:
-            highlight = page.add_highlight_annot(inst)
+        if ins_no < len(final_instances):
+            highlight = page.add_highlight_annot(final_instances[ins_no])
             highlight.update()   
     
     return template     
@@ -349,12 +363,148 @@ def fill_LEFS(general_values:dict, form_values:dict):
         elif score == 3:
             page = highlight_box(y[i] + 2, pw - x[7], y[i + 1] - 2, pw - x[6], page) # bring in the highlight slightly due to formatting
         total += score
-    general_values['total'] = total # save in general to avoid passing form_values for efficiency
     
-    template = fill_textboxes(general_values, {}, template) # fill other values
+    new_dict = {} # save in new to avoid passing form_values for efficiency
+    new_dict['total'] = total
+    
+    template = fill_textboxes(general_values, new_dict, template) # fill other values
     
     return template
 
+def fill_FRAT(general_values:dict, form_values:dict):
+    """
+    Inserts values from dictionary in correct fields in LEFS pdf file.
+    """
+    template = fitz.open('forms/FRAT.pdf') # read in template pdf
+
+    # define coordinates for 'Part 1'
+    x = [504, 521]
+    y = [(203,213,224,236,248),(250,260.5,272,284,295),(297,307,318,330,341),(344,354,366,377,388)] # each tuple represents one question
+
+    # highlight correct box for each row
+    page = template.load_page(0) # load FRAT page
+    
+    total = 0 # track total
+    
+    key = 'Recent Falls' # key using 2,4,6,8 scale
+    score = form_values[key]
+    if score == 2:
+        page = highlight_box(x[0], y[0][0], x[1], y[0][1], page) # choose correct y tuple and relevant values from tuple
+    elif score == 4:
+        page = highlight_box(x[0], y[0][1], x[1], y[0][2], page) 
+    elif score == 6:
+        page = highlight_box(x[0], y[0][2], x[1], y[0][3], page) 
+    elif score == 8:
+        page = highlight_box(x[0], y[0][3], x[1], y[0][4], page)    
+    total += score
+        
+    keys = ['Medications', 'Psychological', 'Cognitive Status'] # keys using 1-4 scale
+    for i in range(1, len(keys) + 1):
+        score = form_values[keys[i - 1]]
+        if score == 1:
+            page = highlight_box(x[0], y[i][0], x[1], y[i][1], page) # choose correct y tuple and relevant values from tuple
+        elif score == 2:
+            page = highlight_box(x[0], y[i][1], x[1], y[i][2], page) 
+        elif score == 3:
+            page = highlight_box(x[0], y[i][2], x[1], y[i][3], page) 
+        elif score == 4:
+            page = highlight_box(x[0], y[i][3], x[1], y[i][4], page) 
+        total += score
+    
+    for field in page.widgets(): # ineffiency to improve?
+        key = field.field_name
+        # Check if it's a checkbox
+        if field.field_type == fitz.PDF_WIDGET_TYPE_CHECKBOX:
+            if form_values[key] == 'Y':
+                field.field_value = True # mark checkbox
+                field.update()
+    
+    form_values['total'] = total
+    
+    # highlight overall risk status
+    x = [216.5,248,267,318,342,374]
+    y = [502,514]
+    
+    # final fall status
+    if form_values['auto_high_1'] == 'Y' or form_values['auto_high_2'] == 'Y' or total >= 16:
+        page = highlight_box(x[4], y[0], x[5], y[1], page)
+    elif total >= 5 and total <= 11:
+        page = highlight_box(x[2], y[0], x[3], y[1], page)
+    elif total >= 12 and total <= 15:
+        page = highlight_box(x[0], y[0], x[1], y[1], page)
+
+    # fill text fields
+    template = fill_textboxes(general_values, form_values, template)
+    
+    return template
+    
+def fill_HONOS(general_values:dict, form_values:dict):
+    """
+    Inserts values from dictionary in correct fields in HONOS pdf file.
+    """
+    template = fitz.open('forms/HONOS.pdf') # read in template pdf  
+    
+    with open('honos.txt', 'r') as file: # read responses
+        responses = file.readlines()
+        
+    total = 0 # track total score
+    for i in range(len(responses)):
+        options = responses[i].split('_') # different options
+        
+        value = form_values[i + 1] # value for current question
+        opt = options[value]
+        total += value # increment total 
+        
+        for line in opt.split('*'): # in case split over multiple lines
+            # account for cases where line appears multiple times in the document
+            if line == 'No problems of this kind during the period rated':
+                instance = i
+            else:
+                instance = 0
+            template = highlight_text(line, template, instance, case_sensitive=False) # highlight each line of value
+    
+    # specifications for question 8
+    for letter in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']:
+        if form_values[letter] == 'Y':
+            if letter == 'A':
+                template = highlight_text('A phobic', template)
+                template = highlight_text('A,', template)
+            elif letter == 'B':
+                template = highlight_text('B anxiety', template)
+                template = highlight_text('B,', template)
+            elif letter == 'C':
+                template = highlight_text('C obsessive-compulsive', template)
+                template = highlight_text('C,', template)
+            elif letter == 'D':
+                template = highlight_text('D stress', template)
+                template = highlight_text('D,', template)
+            elif letter == 'E':
+                template = highlight_text('E dissociative', template)
+                template = highlight_text('E,', template)
+            elif letter == 'F':
+                template = highlight_text('F somatoform', template)
+                template = highlight_text('F,', template)
+            elif letter == 'G':
+                template = highlight_text('G eating', template)
+                template = highlight_text('G,', template)
+            elif letter == 'H':
+                template = highlight_text('H sleep', template)
+                template = highlight_text('H,', template)  
+            elif letter == 'I':
+                template = highlight_text('I sexual', template)
+                template = highlight_text('I,', template)
+            elif letter == 'J':
+                template = highlight_text('J other', template)
+                template = highlight_text('J,', template)            
+                              
+    # to add in total
+    form_values['total'] = str(total) + '/48'
+    
+    # fill in textboxes
+    template = fill_textboxes(general_values, form_values, template)
+    
+    return template
+    
 def produce_output(master:dict[dict]):
     """
     Calls fill_form function for each dictionary in dictionaries and combines pdfs to final file. 

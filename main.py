@@ -282,7 +282,7 @@ def fill_LAWTON(general_values:dict, form_values:dict):
         i = 0 # counter
         for line in file:
             options = line.split('/')
-            template = highlight_text(options[int(form_values[sections[i]]) - 1], template) # highlight relevant number for each column
+            template = highlight_text(options[int(form_values[sections[i]]) - 1], template, case_sensitive=False) # highlight relevant number for each column
             i += 1 # increment
     
     # calculate left side total
@@ -362,6 +362,8 @@ def fill_LEFS(general_values:dict, form_values:dict):
             page = highlight_box(y[i] + 2, pw - x[5], y[i + 1] - 2, pw - x[4], page) # bring in the highlight slightly due to formatting
         elif score == 3:
             page = highlight_box(y[i] + 2, pw - x[7], y[i + 1] - 2, pw - x[6], page) # bring in the highlight slightly due to formatting
+        elif score == 4:
+            page = highlight_box(y[i] + 2, pw - x[9], y[i + 1] - 2, pw - x[8], page) # bring in the highlight slightly due to formatting
         total += score
     
     new_dict = {} # save in new to avoid passing form_values for efficiency
@@ -526,7 +528,7 @@ def index():
 # Route to serve the Excel template
 @app.route('/download-template')
 def download_template():
-    template_path = 'template.xlsx'
+    template_path = 'path_to_your_template/Excel_Template.xlsx'
     return send_file(template_path, as_attachment=True)
 
 @app.route('/upload', methods=['POST'])

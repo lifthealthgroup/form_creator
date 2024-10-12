@@ -4,12 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Excel File</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> <!-- Link to the external CSS file -->
 </head>
 <body>
-    <h1>Upload Excel File</h1>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" accept=".xlsx" required>
-        <input type="submit" value="Upload">
-    </form>
+    <div class="container">
+        <h1>Upload Excel File</h1>
+
+        <!-- Download Template Button -->
+        <div class="template-download">
+            <a href="/download-template" class="download-btn">Download Excel Template</a>
+        </div>
+
+        <!-- File Upload Form -->
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".xlsx" required class="file-input">
+            <input type="submit" value="Upload" class="upload-btn">
+        </form>
+    </div>
 </body>
 </html>

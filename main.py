@@ -86,7 +86,7 @@ def highlight_text(string:str, template, ins_no=0, case_sensitive=True):
         if case_sensitive == True: # filter if case-sensitive
             final_instances = []
             for inst in text_instances:                
-                if string in page.get_text("text", clip=inst): # compare texts 
+                if string in page.get_text("text", clip=inst): # compare 
                     final_instances.append(inst)
         else:
             final_instances = text_instances
@@ -522,6 +522,12 @@ def produce_output(master:dict[dict]):
 @app.route('/')
 def index():
     return render_template('upload.html')  # Simple upload form
+
+# Route to serve the Excel template
+@app.route('/download-template')
+def download_template():
+    template_path = 'template.xlsx'
+    return send_file(template_path, as_attachment=True)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():

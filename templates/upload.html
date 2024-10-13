@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Excel File</title>
+    <title>Upload Excel Files</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> <!-- Link to the external CSS file -->
 </head>
 <body>
     <div class="container">
-        <h1>Upload Excel File</h1>
+        <h1>Upload Excel Files</h1>
 
         <!-- Download Template Button -->
         <div class="template-download">
@@ -16,10 +16,29 @@
         </div>
 
         <!-- File Upload Form -->
-        <form action="/upload" method="post" enctype="multipart/form-data">
-            <input type="file" name="file" accept=".xlsx" required class="file-input">
+        <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
+            <input type="file" name="files[]" accept=".xlsx" multiple required class="file-input" id="file-input">
             <input type="submit" value="Upload" class="upload-btn">
         </form>
+
+        <!-- File Previews -->
+        <div class="file-preview" id="file-preview"></div>
     </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const filePreview = document.getElementById('file-preview');
+
+        // Function to preview selected files
+        fileInput.addEventListener('change', function() {
+            filePreview.innerHTML = ''; // Clear previous previews
+            for (const file of this.files) {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.textContent = file.name; // Show the file name
+                filePreview.appendChild(fileItem);
+            }
+        });
+    </script>
 </body>
 </html>

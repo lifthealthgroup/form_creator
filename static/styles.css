@@ -1,74 +1,74 @@
-/* Basic reset */
-* {
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
 }
 
-/* Styling for the main container */
 .container {
-    max-width: 500px;
+    max-width: 600px;
     margin: 50px auto;
     padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
     text-align: center;
 }
 
-/* Styling for the header */
-h1 {
-    font-family: Arial, sans-serif;
-    font-size: 24px;
-    color: #333;
-    margin-bottom: 20px;
-}
-
-/* Styling for the download button */
-.download-btn {
-    background-color: #007bff;
-    color: #fff;
-    padding: 10px 20px;
-    font-size: 16px;
-    border: none;
-    border-radius: 5px;
-    text-decoration: none;
-    display: inline-block;
-    cursor: pointer;
-    margin-bottom: 20px;
-}
-
-.download-btn:hover {
-    background-color: #0056b3;
-}
-
-/* Styling for the file input */
 .file-input {
-    margin-bottom: 20px;
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-    width: 100%;
+    display: block;
+    margin: 20px auto;
 }
 
-/* Styling for the upload button */
 .upload-btn {
-    background-color: #28a745;
-    color: #fff;
-    padding: 10px 20px;
-    font-size: 16px;
+    display: block;
+    width: 100%;
+    padding: 10px;
     border: none;
+    background: #28a745;
+    color: white;
+    font-size: 16px;
     border-radius: 5px;
     cursor: pointer;
 }
 
 .upload-btn:hover {
-    background-color: #218838;
+    background: #218838;
 }
 
-/* General body styling */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
+.template-download {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.download-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.download-btn:hover {
+    background: #0056b3;
+}
+
+.file-preview {
+    margin: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.file-item {
+    background-color: #f1f1f1;
+    margin: 5px 0;
+    padding: 10px;
+    border-radius: 5px;
+    width: 100%;
 }

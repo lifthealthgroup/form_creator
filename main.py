@@ -1,9 +1,11 @@
 import pandas as pd
 import fitz
+import zipfile
 from flask import Flask, request, send_file, render_template
-import os
 import math
-import difflib
+from werkzeug.utils import secure_filename
+import io
+
 
 app = Flask(__name__)
 
@@ -523,34 +525,49 @@ def produce_output(master:dict[dict]):
 
 @app.route('/')
 def index():
-    return render_template('upload.html')  # Simple upload form
+    return render_template('upload.html')
 
-# Route to serve the Excel template
+# Route to serve the Excel template for download
 @app.route('/download-template')
 def download_template():
-    template_path = 'path_to_your_template/Excel_Template.xlsx'
+    template_path = 'template.xlsx'  # Update this path
     return send_file(template_path, as_attachment=True)
 
 @app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
+def upload_files():
+    if 'files[]' not in request.files:
         return "No file part", 400
-    file = request.files['file']
-    if file.filename == '':
+
+    files = request.files.getlist('files[]')
+    
+    if not files or all(f.filename == '' for f in files):
         return "No selected file", 400
 
-    # Process the uploaded file
-    master = read_excel(file.stream)  # Read Excel from the uploaded file
-    final_document = produce_output(master)
-    
-    # Save the output PDF
-    output_path = 'output/forms.pdf'
-    if not os.path.exists('output'):
-        os.makedirs('output')
-    
-    final_document.save(output_path)
-    
-    return send_file(output_path, as_attachment=True)
+    # Create an in-memory zip file
+    memory_file = io.BytesIO()
+
+    with zipfile.ZipFile(memory_file, 'w') as zf:
+        for file in files:
+            if file and file.filename.endswith('.xlsx'):
+                # Ensure the filename is secure
+                filename = secure_filename(file.filename)
+
+                # Read Excel file (assuming read_excel and produce_output are implemented)
+                master = read_excel(file.stream)  # Replace with your actual Excel reading function
+                final_document = produce_output(master)  # Replace with your PDF generating function
+
+                # Store the PDF in memory instead of saving to disk
+                pdf_stream = io.BytesIO()
+                final_document.save(pdf_stream)
+                pdf_stream.seek(0)  # Important: Go back to the start of the BytesIO stream
+
+                # Add the PDF to the zip file
+                zf.writestr(f'{filename}.pdf', pdf_stream.read())
+
+    memory_file.seek(0)  # Again, go back to the start of the in-memory zip file
+
+    # Return the zip file as a downloadable response
+    return send_file(memory_file, download_name='processed_files.zip', as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True)

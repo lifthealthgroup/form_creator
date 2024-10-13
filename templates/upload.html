@@ -3,12 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Excel Files</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> <!-- Link to the external CSS file -->
+    <title>Upload Medical Assessment Excel Files</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Upload Excel Files</h1>
+        <h1>Upload Medical Assessment Excel Files</h1>
+        
+        <!-- Introduction Section -->
+        <div class="introduction">
+            <p>Welcome to the Medical Assessment Upload Tool! This application allows you to efficiently upload your medical assessment forms in Excel (.xlsx) format for processing.</p>
+            <p>Please ensure that you use the provided Excel template to fill out the assessments. You can upload multiple files at once or choose to add them one by one.</p>
+            <p>To get started, click on the "Download Excel Template" button to get the correct format. Once you've filled out your assessments, click on the "Choose Files" button to select your files, and then hit the "Upload" button to process them.</p>
+            <p>After the upload is complete, you will receive a link to download the processed documents.</p>
+        </div>
 
         <!-- Download Template Button -->
         <div class="template-download">
@@ -17,7 +25,7 @@
 
         <!-- File Upload Form -->
         <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
-            <input type="file" name="files[]" accept=".xlsx" multiple required class="file-input" id="file-input">
+            <input type="file" name="files[]" accept=".xlsx" multiple class="file-input" id="file-input">
             <input type="submit" value="Upload" class="upload-btn">
         </form>
 
@@ -32,6 +40,8 @@
         // Function to preview selected files
         fileInput.addEventListener('change', function() {
             filePreview.innerHTML = ''; // Clear previous previews
+
+            // Loop through selected files and display their names
             for (const file of this.files) {
                 const fileItem = document.createElement('div');
                 fileItem.className = 'file-item';

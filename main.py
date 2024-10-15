@@ -6,7 +6,6 @@ import math
 from werkzeug.utils import secure_filename
 import io
 
-
 app = Flask(__name__)
 
 def render_to_image(filled_form, zoom=2):
@@ -40,7 +39,7 @@ def read_excel(excel:str):
             master[dict_name] = pd.Series(df[col].values, index=df[dict_name]).to_dict() # place dictionary in dictionary
             master[dict_name] = {k:int(v) if isinstance(v, float) and not math.isnan(v) else v for k, v in master[dict_name].items()} # convert values to integers where possible 
     
-    master['GENERAL']['patient_name'] = master['GENERAL']['patient_first_name'] + master['GENERAL']['patient_surname']
+    master['GENERAL']['patient_name'] = master['GENERAL']['patient_first_name'] + " " + master['GENERAL']['patient_surname']
     
     return master # which contains all info needed to fill forms
 
@@ -525,21 +524,25 @@ def produce_output(master:dict[dict]):
 
 @app.route('/')
 def index():
+    """Render the upload page."""
     return render_template('upload.html')
 
-# Route to serve the Excel template for download
 @app.route('/download-template')
 def download_template():
-    template_path = 'template.xlsx'  # Update this path
+    """Serve the Excel template for download."""
+    template_path = 'template.xlsx'  # Path to the Excel template
     return send_file(template_path, as_attachment=True)
 
 @app.route('/upload', methods=['POST'])
 def upload_files():
+    """Handle file upload and return a zip file of processed PDFs."""
+    # Check if the files were included in the request
     if 'files[]' not in request.files:
         return "No file part", 400
 
     files = request.files.getlist('files[]')
-    
+
+    # Validate file uploads
     if not files or all(f.filename == '' for f in files):
         return "No selected file", 400
 
@@ -552,19 +555,23 @@ def upload_files():
                 # Ensure the filename is secure
                 filename = secure_filename(file.filename)
 
-                # Read Excel file (assuming read_excel and produce_output are implemented)
-                master = read_excel(file.stream)  # Replace with your actual Excel reading function
-                final_document = produce_output(master)  # Replace with your PDF generating function
+                try:
+                    # Read the Excel file
+                    master = read_excel(file.stream)  # Function to read the Excel file
+                    final_document = produce_output(master)  # Function to generate the PDF from the DataFrame
 
-                # Store the PDF in memory instead of saving to disk
-                pdf_stream = io.BytesIO()
-                final_document.save(pdf_stream)
-                pdf_stream.seek(0)  # Important: Go back to the start of the BytesIO stream
+                    # Store the PDF in memory
+                    pdf_stream = io.BytesIO()
+                    final_document.save(pdf_stream)
+                    pdf_stream.seek(0)  # Reset the stream position
 
-                # Add the PDF to the zip file
-                zf.writestr(f'{filename}.pdf', pdf_stream.read())
+                    # Add the PDF to the zip file
+                    pdf_filename = f'{filename}.pdf'
+                    zf.writestr(pdf_filename, pdf_stream.read())
+                except Exception:
+                    continue  # Skip to the next file on error
 
-    memory_file.seek(0)  # Again, go back to the start of the in-memory zip file
+    memory_file.seek(0)  # Reset the in-memory zip file position
 
     # Return the zip file as a downloadable response
     return send_file(memory_file, download_name='processed_files.zip', as_attachment=True)

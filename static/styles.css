@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box; /* Include padding and border in element's total width and height */
+}
+
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
@@ -20,8 +24,7 @@ h1 {
 }
 
 .file-input {
-    display: block;
-    margin: 20px auto;
+    display: none; /* Keep this hidden */
 }
 
 .upload-btn {
@@ -66,10 +69,66 @@ h1 {
 }
 
 .file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     background-color: #f1f1f1;
     margin: 5px 0;
     padding: 10px;
     border-radius: 5px;
-    width: calc(100% - 20px); /* Adjust width for padding */
+    width: 100%; /* Ensure it takes the full width */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.file-item span {
+    flex-grow: 1;
+    padding-left: 30px;
+}
+
+.remove-btn {
+    background-color: transparent; /* Transparent background */
+    color: #ff4d4d; /* Red color for the remove button */
+    border: none; /* No border */
+    font-size: 18px; /* Font size */
+    cursor: pointer; /* Pointer cursor on hover */
+    padding: 5px 10px; /* Padding around the text */
+    border-radius: 3px; /* Slightly rounded corners */
+    transition: background-color 0.3s, transform 0.3s; /* Smooth transitions */
+}
+
+.remove-btn:hover {
+    background-color: rgba(255, 77, 77, 0.1); /* Light red background on hover */
+    transform: scale(1.1); /* Slightly scale up on hover */
+}
+
+.remove-btn:focus {
+    outline: none; /* Remove default outline on focus */
+    box-shadow: 0 0 0 2px rgba(255, 77, 77, 0.5); /* Add a subtle focus outline */
+}
+
+.file-item:hover {
+    background-color: #e9e9e9;
+}
+
+.choose-files-btn {
+    display: block;
+    width: 100%; /* Full width */
+    padding: 15px;
+    border: none;
+    background: #007bff; 
+    color: white;
+    font-size: 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.choose-files-btn:hover {
+    background: #0056b3; 
+}
+
+.file-preview {
+    margin-top: 20px;
+    display: none; 
 }

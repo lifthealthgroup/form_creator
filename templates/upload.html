@@ -8,47 +8,28 @@
 </head>
 <body>
     <div class="container">
-        <h1>Upload Medical Assessment Excel Files</h1>
+        <h1>Generate Assessments Tool</h1>
         
-        <!-- Introduction Section -->
         <div class="introduction">
-            <p>Welcome to the Medical Assessment Upload Tool! This application allows you to efficiently upload your medical assessment forms in Excel (.xlsx) format for processing.</p>
-            <p>Please ensure that you use the provided Excel template to fill out the assessments. You can upload multiple files at once or choose to add them one by one.</p>
-            <p>To get started, click on the "Download Excel Template" button to get the correct format. Once you've filled out your assessments, click on the "Choose Files" button to select your files, and then hit the "Upload" button to process them.</p>
-            <p>After the upload is complete, you will receive a link to download the processed documents.</p>
+            <p>This application allows you to efficiently generate assessment forms using Excel (.xlsx) format.</p>
+            <p>Please ensure that you use the provided Excel template.</p>
+            <p>Once you've filled out your assessments, click on the "Choose Files" button to select your files, and then hit the "Upload" button to process them.</p>
+            <p>Only include values for assessments to be included as blank columns will not have assessments generated.</p>
         </div>
 
-        <!-- Download Template Button -->
         <div class="template-download">
             <a href="/download-template" class="download-btn">Download Excel Template</a>
         </div>
 
-        <!-- File Upload Form -->
         <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
+            <label for="file-input" class="choose-files-btn">Choose Files</label>
             <input type="file" name="files[]" accept=".xlsx" multiple class="file-input" id="file-input">
             <input type="submit" value="Upload" class="upload-btn">
         </form>
 
-        <!-- File Previews -->
         <div class="file-preview" id="file-preview"></div>
     </div>
 
-    <script>
-        const fileInput = document.getElementById('file-input');
-        const filePreview = document.getElementById('file-preview');
-
-        // Function to preview selected files
-        fileInput.addEventListener('change', function() {
-            filePreview.innerHTML = ''; // Clear previous previews
-
-            // Loop through selected files and display their names
-            for (const file of this.files) {
-                const fileItem = document.createElement('div');
-                fileItem.className = 'file-item';
-                fileItem.textContent = file.name; // Show the file name
-                filePreview.appendChild(fileItem);
-            }
-        });
-    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

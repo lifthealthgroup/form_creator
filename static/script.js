@@ -43,3 +43,34 @@ fileInput.addEventListener('change', function() {
     }
     updateFilePreview();  // Update the preview
 });
+
+// Assuming you're using jQuery for the AJAX request
+document.getElementById('upload-form').addEventListener('submit', function(event) {
+    event.preventDefault();  // Prevent the form from submitting the default way
+
+    const formData = new FormData(this);  // Create a FormData object
+
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                // Show alert with error messages
+                alert("Error: \n" + err.errors.join("\n"));
+            });
+        }
+        return response.blob();  // Handle success
+    })
+    .then(blob => {
+        // Create a link element to download the zip file
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'processed_files.zip';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    })
+});

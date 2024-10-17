@@ -1,12 +1,50 @@
 import pandas as pd
 import fitz
 import zipfile
-from flask import Flask, request, send_file, render_template
+from flask import Flask, request, send_file, render_template, jsonify
 import math
 from werkzeug.utils import secure_filename
 import io
 
 app = Flask(__name__)
+
+def validate_columns(master, file):
+    """Validate that if any row in each _Values dictionary is filled, 
+       all previous rows must also be filled (but allow trailing empty entries)."""
+    errors = []
+
+    # Iterate through each dictionary in the master dictionary
+    for dict_name, inner_dict in master.items():
+        
+        whodas_empties = [['D55', 'D56', 'D57', 'D58'], [55, 56, 57, 58, 59]]
+        if dict_name == 'WHODAS':
+            # The following keys are considered edge cases, as they can be empty in some circumstances
+            has_filled = any(not pd.isna(inner_dict[key]) for key in whodas_empties[0] if key in inner_dict)
+            has_empty = any(pd.isna(inner_dict[key]) for key in whodas_empties[0] if key in inner_dict)
+            
+            # If there are filled and empty entries, validate each key in `whodas_empties`
+            if has_filled and has_empty:
+                for key in whodas_empties[0]:
+                    if key in inner_dict and pd.isna(inner_dict[key]):
+                        errors.append(f"In column '{dict_name}', in file '{file}', the field for '{key}' is empty (but others are filled)")
+                        
+        if dict_name == 'WHODASKIDS':
+            # The following keys are considered edge cases, as they can be empty in some circumstances
+            has_filled = any(not pd.isna(inner_dict[key]) for key in whodas_empties[1] if key in inner_dict)
+            has_empty = any(pd.isna(inner_dict[key]) for key in whodas_empties[1] if key in inner_dict)
+            
+            # If there are filled and empty entries, validate each key in `whodas_empties`
+            if has_filled and has_empty:
+                for key in whodas_empties[1]:
+                    if key in inner_dict and pd.isna(inner_dict[key]):
+                        errors.append(f"In column '{dict_name}', in file '{file}', the field for '{key}' is empty (but others are filled)")
+                        
+        for key, item in inner_dict.items():
+            if key not in whodas_empties[1] and key not in whodas_empties[0]:
+                if pd.isna(item):
+                    errors.append(f"In column '{dict_name}', in file '{file}', the field for '{key}' is empty")                  
+    
+    return errors
 
 def render_to_image(filled_form, zoom=2):
     """
@@ -34,12 +72,18 @@ def read_excel(excel:str):
     master = {} # initialise master dictionary
     
     for col in df.columns:
-        if not pd.isna(df[col].iloc[0]) and 'values' in col.lower(): # find dictionaries to populate
+        if not pd.isna(df[col].iloc[0]) and 'values' in col.lower(): # find dictionaries to populate    
             dict_name = col.replace(' Values', '') # dictionary key name
-            master[dict_name] = pd.Series(df[col].values, index=df[dict_name]).to_dict() # place dictionary in dictionary
+            
+            # Only keep indices that are not NaN and their corresponding values
+            valid_indices = df[dict_name][df[dict_name].notna()]  # Indices without NaN
+            valid_values = df[col][df[dict_name].notna()]
+            
+            master[dict_name] = pd.Series(valid_values.values, index=valid_indices).to_dict() # place dictionary in dictionary
             master[dict_name] = {k:int(v) if isinstance(v, float) and not math.isnan(v) else v for k, v in master[dict_name].items()} # convert values to integers where possible 
     
     master['GENERAL']['patient_name'] = master['GENERAL']['patient_first_name'] + " " + master['GENERAL']['patient_surname']
+    master['GENERAL']['date'] = pd.to_datetime(master['GENERAL']['date']).strftime('%d/%m/%y')
     
     return master # which contains all info needed to fill forms
 
@@ -124,7 +168,7 @@ def fill_WHODAS(general_values:dict, form_values:dict):
         page.draw_line((26, 363), (583.7, 209.3), width=2)
         
         # find total values
-        form_values['total'] = form_values['1_overall'] + form_values['2_overall'] + form_values['3_overall'] + form_values['4_overall'] + form_values['5_overall'] + form_values['6_overall']
+        form_values['total'] = form_values['1_overall'] + form_values['2_overall'] + form_values['3_overall'] + form_values['4_overall'] + form_values['5_overall'] + form_values['6_overall'] + 20
     else:
         form_values['total'] = form_values['1_overall'] + form_values['2_overall'] + form_values['3_overall'] + form_values['4_overall'] + form_values['5_overall'] + form_values['5_overall2'] + form_values['6_overall']
         
@@ -260,7 +304,7 @@ def fill_LSP(general_values:dict, form_values:dict):
     form_values['d_score'] = form_values[7] + form_values[13] + form_values[14] + form_values[15]
     
     form_values['total'] = form_values['a_score'] + form_values['b_score'] + form_values['c_score'] + form_values['d_score']
-    form_values['total_100'] = str(form_values['total'] * 1.25) + "/100"
+    form_values['total_100'] = str(round(form_values['total'] * 2.0833, 2)) + "/100"
     
     form_values['a_score'] = str(form_values['a_score']) + "/12"
     form_values['b_score'] = str(form_values['b_score']) + "/15"
@@ -508,6 +552,48 @@ def fill_HONOS(general_values:dict, form_values:dict):
     
     return template
     
+def fill_WHODASKIDS(general_values:dict, form_values:dict):
+    """
+    Inserts values from dictionary in correct fields in HONOS pdf file.
+    """
+    
+    template = fitz.open('forms/WHODASKIDS.pdf') # read in template pdf
+    
+    # calculate extra fields
+    for i in range(1,7): 
+        if i != 5:
+            number_params = sum(1 for key, _ in form_values.items() if isinstance(key, float) and key // 10 == i) # number of keys in section
+            form_values[str(i) + '_total'] = sum(value for key, value in form_values.items() if isinstance(key, float) and key // 10 == i)
+            form_values[str(i) + '_avg'] = round(sum(value for key, value in form_values.items() if isinstance(key, float) and key // 10 == i) / number_params , 2) # calculate average
+            
+    form_values['5_total'] = form_values[51] + form_values[52] + form_values[53] + form_values[54] # separate section 5 in case part 2 not included    
+    form_values['5_total2'] = form_values[55] + form_values[56] + form_values[57] + form_values[58]
+    
+    # if section 2 of 5 is N/A and left empty
+    if math.isnan(form_values['5_total2']):
+        form_values['55'], form_values['56'], form_values['57'], form_values['58'], form_values['59'] = "N/A", "N/A", "N/A", "N/A", "N/A"
+        page = template.load_page(1)
+        page.draw_line((36.5,476.2), (505, 337), width=2)
+        form_values['5_total'] += 20
+    else:
+        form_values['5_total'] += form_values['5_total2']
+    form_values['5_avg'] = round(form_values['5_total'] / 9, 2)
+    
+    # find total values    
+    total = form_values['1_total'] + form_values['2_total'] + form_values['3_total'] + form_values['4_total'] + form_values['5_total'] + form_values['6_total']
+    form_values['percentage'] = "Score: " + str(round(total / 34, 2)) + "/5 = " + str(round(total/1.7, 2)) + "%"
+    
+    form_values['total'] = "Total: " + str(total) + "/170"
+    # add in total strings
+    for i in range(1,7): 
+        number_params = sum(1 for key, _ in form_values.items() if isinstance(key, float) and key // 10 == i) # number of keys in section
+        form_values[str(i) + '_total'] = str(form_values[str(i) + '_total']) + "/" + str(number_params * 5)
+        form_values[str(i) + '_avg'] = str(form_values[str(i) + '_avg']) + "/5"
+    
+    # fill in textboxes
+    template = fill_textboxes(general_values, form_values, template)
+    return template
+
 def produce_output(master:dict[dict]):
     """
     Calls fill_form function for each dictionary in dictionaries and combines pdfs to final file. 
@@ -515,11 +601,14 @@ def produce_output(master:dict[dict]):
     combined = fitz.open() # new document
     for key in master.keys():
         if key != 'GENERAL':
-            function_name = globals().get(f"fill_{key}")
-            if function_name:
-                filled_form = function_name(master['GENERAL'], master[key])
-                rendered_pdf = render_to_image(filled_form) # this is a workaround to fuse field values to page 
-                combined.insert_pdf(rendered_pdf) # append to combined
+            try: # catch errors
+                function_name = globals().get(f"fill_{key}")
+                if function_name:
+                    filled_form = function_name(master['GENERAL'], master[key])
+                    rendered_pdf = render_to_image(filled_form) # this is a workaround to fuse field values to page 
+                    combined.insert_pdf(rendered_pdf) # append to combined
+            except Exception as e:
+                raise Exception(f"Error in form {key}: {str(e)}")
     return combined
 
 @app.route('/')
@@ -548,16 +637,21 @@ def upload_files():
 
     # Create an in-memory zip file
     memory_file = io.BytesIO()
-
+    errors = []
+    
     with zipfile.ZipFile(memory_file, 'w') as zf:
         for file in files:
             if file and file.filename.endswith('.xlsx'):
                 # Ensure the filename is secure
                 filename = secure_filename(file.filename)
 
-                try:
-                    # Read the Excel file
-                    master = read_excel(file.stream)  # Function to read the Excel file
+                # Read the Excel file
+                master = read_excel(file.stream)  # Function to read the Excel file
+                
+                # Validate the file contents
+                errors.extend(validate_columns(master, file.filename))  # Updated validation that allows trailing empty rows
+                
+                if not errors: # prevent errors
                     final_document = produce_output(master)  # Function to generate the PDF from the DataFrame
 
                     # Store the PDF in memory
@@ -568,13 +662,17 @@ def upload_files():
                     # Add the PDF to the zip file
                     pdf_filename = f'{filename}.pdf'
                     zf.writestr(pdf_filename, pdf_stream.read())
-                except Exception:
-                    continue  # Skip to the next file on error
+
 
     memory_file.seek(0)  # Reset the in-memory zip file position
 
-    # Return the zip file as a downloadable response
-    return send_file(memory_file, download_name='processed_files.zip', as_attachment=True)
+    if errors:
+        temp = errors
+        errors = []
+        return jsonify({"errors": temp}), 400 # flatten errors
+    else:
+        # Return the zip file as a downloadable response
+        return send_file(memory_file, download_name='processed_files.zip', as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True)

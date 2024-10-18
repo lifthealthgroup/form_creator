@@ -682,8 +682,8 @@ def upload_files():
                     pdf_stream.seek(0)  # Reset the stream position
 
                     # Add the PDF to the zip file
-                    pdf_filename = f'{filename.replace('.xlsx', '')}.pdf'
-                    zf.writestr(pdf_filename, pdf_stream.read())
+                    pdf_filename = filename.replace('.xlsx', '')
+                    zf.writestr(f'{pdf_filename}.pdf', pdf_stream.read())
 
 
     memory_file.seek(0)  # Reset the in-memory zip file position

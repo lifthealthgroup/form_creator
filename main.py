@@ -5,6 +5,7 @@ from flask import Flask, request, send_file, render_template, jsonify
 import math
 from werkzeug.utils import secure_filename
 import io
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -40,7 +41,7 @@ def validate_columns(master, file):
                         errors.append(f"In column '{dict_name}', in file '{file}', the field for '{key}' is empty (but others are filled)")
                         
         for key, item in inner_dict.items():
-            if key not in whodas_empties[1] and key not in whodas_empties[0]:
+            if key not in whodas_empties[1] and key not in whodas_empties[0] and key != 'ndis_no': # NDIS_NO IS NOT COMPULSORY AT THIS STAGE
                 if pd.isna(item):
                     errors.append(f"In column '{dict_name}', in file '{file}', the field for '{key}' is empty")                  
     
@@ -84,6 +85,13 @@ def read_excel(excel:str):
     
     master['GENERAL']['patient_name'] = master['GENERAL']['patient_first_name'] + " " + master['GENERAL']['patient_surname']
     master['GENERAL']['date'] = pd.to_datetime(master['GENERAL']['date']).strftime('%d/%m/%y')
+    
+    # calculate age
+    today = datetime.now()
+    age = today.year - master['GENERAL']['DOB'].year
+    if (today.month, today.day) < (master['GENERAL']['DOB'].month, master['GENERAL']['DOB'].day):
+        age -= 1
+    master['GENERAL']['age'] = age
     
     return master # which contains all info needed to fill forms
 
@@ -154,16 +162,20 @@ def fill_WHODAS(general_values:dict, form_values:dict):
     for i in range(1,7): 
         if i != 5:
             number_params = sum(1 for key, _ in form_values.items() if key.startswith('D' + str(i)))
-            form_values[str(i) + '_overall'] = sum(value for key, value in form_values.items() if key.startswith('D' + str(i)))
-            form_values[str(i) + '_avg'] = round(sum(value for key, value in form_values.items() if key.startswith('D' + str(i)))/number_params , 2)
+            total = sum(value for key, value in form_values.items() if key.startswith('D' + str(i)))
+            form_values[str(i) + '_overall'] = total
+            form_values[str(i) + '_avg'] = round(total/number_params , 1)
+            form_values[str(i) + '_percent'] = str(round((total/(number_params * 5)) * 100 , 1)) + "%"
     form_values['5_overall'] = form_values['D51'] + form_values['D52'] + form_values['D53'] + form_values['D51']
-    form_values['5_avg'] = round(form_values['5_overall'] / 4, 2)
+    form_values['5_avg'] = round(form_values['5_overall'] / 4, 1)
+    form_values['5_percent'] = str(round((form_values['5_overall'] / 20) * 100, 1)) + '%'
     form_values['5_overall2'] = form_values['D55'] + form_values['D56'] + form_values['D57'] + form_values['D58']
-    form_values['5_avg2'] = round(form_values['5_overall2'] / 4, 2)
+    form_values['5_avg2'] = round(form_values['5_overall2'] / 4, 1)
+    form_values['5_percent2'] = str(round((form_values['5_overall2'] / 20) * 100, 1)) + '%'
     
     # if section 2 of 5 is N/A and left empty
     if math.isnan(form_values['5_overall2']):
-        form_values['D55'], form_values['D56'], form_values['D57'], form_values['D58'], form_values['5_avg2'], form_values['5_overall2'] = "N/A", "N/A", "N/A", "N/A", "N/A", "N/A"
+        form_values['D55'], form_values['D56'], form_values['D57'], form_values['D58'], form_values['5_avg2'], form_values['5_overall2'], form_values['5_percent2']  = "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A"
         page = template.load_page(1)
         page.draw_line((26, 363), (583.7, 209.3), width=2)
         
@@ -172,7 +184,8 @@ def fill_WHODAS(general_values:dict, form_values:dict):
     else:
         form_values['total'] = form_values['1_overall'] + form_values['2_overall'] + form_values['3_overall'] + form_values['4_overall'] + form_values['5_overall'] + form_values['5_overall2'] + form_values['6_overall']
         
-    form_values['avg'] = round(form_values['total'] / 36, 2)
+    form_values['avg'] = round(form_values['total'] / 36, 1)
+    form_values['percent'] = 'Total Score: ' + str(round((form_values['total'] / 180) * 100, 1)) + '%'
     
     # Fill in textboxes
     template = fill_textboxes(general_values, form_values, template)
@@ -563,32 +576,41 @@ def fill_WHODASKIDS(general_values:dict, form_values:dict):
     for i in range(1,7): 
         if i != 5:
             number_params = sum(1 for key, _ in form_values.items() if isinstance(key, float) and key // 10 == i) # number of keys in section
-            form_values[str(i) + '_total'] = sum(value for key, value in form_values.items() if isinstance(key, float) and key // 10 == i)
-            form_values[str(i) + '_avg'] = round(sum(value for key, value in form_values.items() if isinstance(key, float) and key // 10 == i) / number_params , 2) # calculate average
+            total = sum(value for key, value in form_values.items() if isinstance(key, float) and key // 10 == i)
+            form_values[str(i) + '_total'] = total
+            form_values[str(i) + '_avg'] = round((total / (number_params * 5) * 100) , 1) # calculate percentage
             
     form_values['5_total'] = form_values[51] + form_values[52] + form_values[53] + form_values[54] # separate section 5 in case part 2 not included    
-    form_values['5_total2'] = form_values[55] + form_values[56] + form_values[57] + form_values[58]
+    form_values['5_total2'] = form_values[55] + form_values[56] + form_values[57] + form_values[58] + form_values[59]
     
     # if section 2 of 5 is N/A and left empty
     if math.isnan(form_values['5_total2']):
-        form_values['55'], form_values['56'], form_values['57'], form_values['58'], form_values['59'] = "N/A", "N/A", "N/A", "N/A", "N/A"
+        form_values['55'], form_values['56'], form_values['57'], form_values['58'], form_values['59'], form_values['5_total2'], form_values['5_avg2'] = "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A"
         page = template.load_page(1)
         page.draw_line((36.5,476.2), (505, 337), width=2)
-        form_values['5_total'] += 20
+        total = form_values['1_total'] + form_values['2_total'] + form_values['3_total'] + form_values['4_total'] + form_values['5_total'] + form_values['6_total'] + 25
     else:
-        form_values['5_total'] += form_values['5_total2']
-    form_values['5_avg'] = round(form_values['5_total'] / 9, 2)
+        total = form_values['1_total'] + form_values['2_total'] + form_values['3_total'] + form_values['4_total'] + form_values['5_total'] + form_values['5_total2'] + form_values['6_total'] 
+        form_values['5_avg2'] = round((form_values['5_total2'] / 25) * 100, 1)
+    form_values['5_avg'] = round((form_values['5_total'] / 20) * 100, 1)
     
     # find total values    
-    total = form_values['1_total'] + form_values['2_total'] + form_values['3_total'] + form_values['4_total'] + form_values['5_total'] + form_values['6_total']
-    form_values['percentage'] = "Score: " + str(round(total / 34, 2)) + "/5 = " + str(round(total/1.7, 2)) + "%"
+    form_values['percentage'] = "Score: " + str(round(total / 34, 2)) + "/5 = " + str(round(total/1.7, 1)) + "%"
     
     form_values['total'] = "Total: " + str(total) + "/170"
     # add in total strings
     for i in range(1,7): 
-        number_params = sum(1 for key, _ in form_values.items() if isinstance(key, float) and key // 10 == i) # number of keys in section
-        form_values[str(i) + '_total'] = str(form_values[str(i) + '_total']) + "/" + str(number_params * 5)
-        form_values[str(i) + '_avg'] = str(form_values[str(i) + '_avg']) + "/5"
+        if i != 5:
+            number_params = sum(1 for key, _ in form_values.items() if isinstance(key, float) and key // 10 == i) # number of keys in section
+            form_values[str(i) + '_total'] = str(form_values[str(i) + '_total']) + "/" + str(number_params * 5)
+            form_values[str(i) + '_avg'] = str(form_values[str(i) + '_avg']) + "%"
+    
+    # make strings for section 5
+    form_values['5_total'] = str(form_values['5_total']) + "/20"
+    form_values['5_avg'] = str(form_values['5_avg']) + "%"
+    if form_values['5_total2'] != 'N/A':
+        form_values['5_total2'] = str(form_values['5_total2']) + "/25"
+        form_values['5_avg2'] = str(form_values['5_avg2']) + "%"
     
     # fill in textboxes
     template = fill_textboxes(general_values, form_values, template)
@@ -660,7 +682,7 @@ def upload_files():
                     pdf_stream.seek(0)  # Reset the stream position
 
                     # Add the PDF to the zip file
-                    pdf_filename = f'{filename}.pdf'
+                    pdf_filename = f'{filename.replace('.xlsx', '')}.pdf'
                     zf.writestr(pdf_filename, pdf_stream.read())
 
 

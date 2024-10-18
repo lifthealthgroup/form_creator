@@ -39,9 +39,16 @@ def validate_columns(master, file):
                 for key in whodas_empties[1]:
                     if key in inner_dict and pd.isna(inner_dict[key]):
                         errors.append(f"In column '{dict_name}', in file '{file}', the field for '{key}' is empty (but others are filled)")
+        
+        # optional keys in CANS dictionary
+        cans_empties = ['A_desc', 'B_desc', 'C_desc', 'D_desc']
+        if dict_name == 'CANS':
+            for key in cans_empties:
+                if pd.isna(inner_dict[key]):
+                    inner_dict[key] = ''
                         
         for key, item in inner_dict.items():
-            if key not in whodas_empties[1] and key not in whodas_empties[0] and key != 'ndis_no': # NDIS_NO IS NOT COMPULSORY AT THIS STAGE
+            if key not in whodas_empties[1] and key not in whodas_empties[0] and key not in cans_empties:
                 if pd.isna(item):
                     errors.append(f"In column '{dict_name}', in file '{file}', the field for '{key}' is empty")                  
     
@@ -620,6 +627,48 @@ def fill_WHODASKIDS(general_values:dict, form_values:dict):
     template = fill_textboxes(general_values, form_values, template)
     return template
 
+def fill_CASP(general_values:dict, form_values:dict):
+    """
+    Inserts values from dictionary in correct fields in CASP pdf file.
+    """
+    
+    template = fitz.open('forms/CASP.pdf') # read in template pdf
+    
+    form_values['1_summary'] = 0
+    form_values['2_summary'] = 0
+    form_values['3_summary'] = 0
+    form_values['4_summary'] = 0
+    
+    for page in template: # gather fields
+        for field in page.widgets():
+            key = field.field_name
+            # Check if it's a checkbox
+            if field.field_type == fitz.PDF_WIDGET_TYPE_CHECKBOX:
+                category, value = key.split('_') # gain values for dictionary
+                if form_values[int(category)] == float(value):
+                    if int(category) >= 1 and int(category) <= 6:
+                        form_values['1_summary'] += int(value)
+                    elif int(category) >= 6 and int(category) <= 10:
+                        form_values['2_summary'] += int(value)
+                    elif int(category) >= 10 and int(category) <= 15:
+                        form_values['3_summary'] += int(value)
+                    elif int(category) >= 15 and int(category) <= 20:
+                        form_values['4_summary'] += int(value)
+                    field.field_value = True # mark correct checkboxes
+                    field.update()
+    
+    total = form_values['1_summary'] + form_values['2_summary'] + form_values['3_summary'] + form_values['4_summary'] 
+    form_values['total'] = 'Total: ' + str(total) + '/80 = ' + str(round((total/80)*100, 2)) + '%'
+
+    form_values['1_summary'] = str(form_values['1_summary']) + '/24'
+    form_values['2_summary'] = str(form_values['2_summary']) + '/16'
+    form_values['3_summary'] = str(form_values['3_summary']) + '/20'
+    form_values['4_summary'] = str(form_values['4_summary']) + '/20'
+    
+    template = fill_textboxes(general_values, form_values, template)
+    
+    return template
+    
 def produce_output(master:dict[dict]):
     """
     Calls fill_form function for each dictionary in dictionaries and combines pdfs to final file. 

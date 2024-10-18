@@ -340,7 +340,10 @@ def fill_LAWTON(general_values:dict, form_values:dict):
         i = 0 # counter
         for line in file:
             options = line.split('/')
-            template = highlight_text(options[int(form_values[sections[i]]) - 1], template, case_sensitive=False) # highlight relevant number for each column
+            
+            for opt_line in options[int(form_values[sections[i]]) - 1].split('*'):
+                template = highlight_text(opt_line, template, case_sensitive=False) # highlight relevant number for each column
+            
             i += 1 # increment
     
     # calculate left side total
@@ -521,8 +524,9 @@ def fill_HONOS(general_values:dict, form_values:dict):
                 instance = i
             else:
                 instance = 0
+            
             template = highlight_text(line, template, instance, case_sensitive=False) # highlight each line of value
-    
+
     # specifications for question 8
     for letter in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']:
         if form_values[letter] == 'Y':
@@ -549,13 +553,13 @@ def fill_HONOS(general_values:dict, form_values:dict):
                 template = highlight_text('G,', template)
             elif letter == 'H':
                 template = highlight_text('H sleep', template)
-                template = highlight_text('H,', template)  
+                template = highlight_text('H,', template) 
             elif letter == 'I':
                 template = highlight_text('I sexual', template)
                 template = highlight_text('I,', template)
             elif letter == 'J':
                 template = highlight_text('J other', template)
-                template = highlight_text('J,', template)            
+                template = highlight_text('J)', template)    
                               
     # to add in total
     form_values['total'] = str(total) + '/48'

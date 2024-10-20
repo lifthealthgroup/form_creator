@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Medical Assessment Excel Files</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Generate Assessments Tool</h1>
+        
+        <div class="introduction">
+            <p>This application allows you to efficiently generate assessment forms using the provided Excel (.xlsx) format. Blank columns will not have assessments generated.</p>
+            <p>Once you've filled out your assessments, click on the "Choose Files" button to select your files, and then hit the "Upload" button to process them.</p>
+            <p>Please note that the excel template provides simplified descriptions to assist with easy form generation. For further clarification, refer to form downloadable below:</p>
+            <ul>
+                <li><a href="/download-form/whodas" class="download-link">WHODAS</a></li>
+                <li><a href="/download-form/whodas-youth" class="download-link">WHODAS children and youth version</a></li>
+                <li><a href="/download-form/cans" class="download-link">CANS</a></li>
+                <li><a href="/download-form/lsp" class="download-link">LSP</a></li>
+                <li><a href="/download-form/lawton-brody-iadl" class="download-link">Lawton-Brody IADL</a></li>
+                <li><a href="/download-form/lefs" class="download-link">LEFS</a></li>
+                <li><a href="/download-form/berg-balance-scale" class="download-link">Berg Balance Scale</a></li>
+                <li><a href="/download-form/frat" class="download-link">FRAT</a></li>
+                <li><a href="/download-form/honos" class="download-link">HONOS</a></li>
+                <li><a href="/download-form/casp" class="download-link">CASP</a></li>
+            </ul>
+        </div>
+
+        <div class="template-download">
+            <a href="/download-template" class="download-btn">Download Excel Template</a>
+        </div>
+
+        <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
+            <label for="file-input" class="choose-files-btn">Choose Files</label>
+            <input type="file" name="files[]" accept=".xlsx" multiple class="file-input" id="file-input">
+            <input type="submit" value="Upload" class="upload-btn">
+        </form>
+
+        <div class="loading-indicator" id="loading-indicator" style="display: none;">
+            <p>Loading, please wait...</p>
+            <div class="spinner"></div>
+        </div>
+
+        <div class="file-preview" id="file-preview"></div>
+        
+    </div>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

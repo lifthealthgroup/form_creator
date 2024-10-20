@@ -44,11 +44,14 @@ fileInput.addEventListener('change', function() {
     updateFilePreview();  // Update the preview
 });
 
-// Assuming you're using jQuery for the AJAX request
+// Handling the form submission
 document.getElementById('upload-form').addEventListener('submit', function(event) {
     event.preventDefault();  // Prevent the form from submitting the default way
 
     const formData = new FormData(this);  // Create a FormData object
+    const loadingIndicator = document.getElementById('loading-indicator');
+
+    loadingIndicator.style.display = 'block';  // Show loading indicator
 
     fetch('/upload', {
         method: 'POST',
@@ -57,6 +60,8 @@ document.getElementById('upload-form').addEventListener('submit', function(event
     .then(response => {
         if (!response.ok) {
             return response.json().then(err => {
+                // Hide loading indicator on error
+                loadingIndicator.style.display = 'none'; 
                 // Show alert with error messages
                 alert("Error: \n" + err.errors.join("\n"));
             });
@@ -72,5 +77,11 @@ document.getElementById('upload-form').addEventListener('submit', function(event
         document.body.appendChild(a);
         a.click();
         a.remove();
+        
+        loadingIndicator.style.display = 'none';  // Hide loading indicator after download
     })
+    .catch(error => {
+        console.error('Error:', error);
+        loadingIndicator.style.display = 'none';  // Hide loading indicator on fetch error
+    });
 });

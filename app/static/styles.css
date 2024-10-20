@@ -37,6 +37,7 @@ h1 {
     font-size: 16px;
     border-radius: 5px;
     cursor: pointer;
+    transition: background 0.3s ease;
 }
 
 .upload-btn:hover {
@@ -55,6 +56,7 @@ h1 {
     color: white;
     text-decoration: none;
     border-radius: 5px;
+    margin-top: 10px; /* Space above the button */
 }
 
 .download-btn:hover {
@@ -122,13 +124,65 @@ h1 {
     cursor: pointer;
     margin: 20px 0;
     text-align: center;
+    transition: background 0.3s ease;
 }
 
 .choose-files-btn:hover {
     background: #0056b3; 
 }
 
-.file-preview {
+/* General link styles */
+a {
+    text-decoration: none; /* Remove underline */
+    color: #007bff; /* Set link color */
+    transition: color 0.3s ease, background-color 0.3s ease; /* Smooth transition for hover effects */
+}
+
+/* Remove bullet points from the list */
+ul {
+    list-style-type: none; /* Remove default bullet points */
+    padding: 0; /* Remove padding */
+    margin: 0; /* Remove margin */
+}
+
+/* Style for each list item */
+ul li {
+    margin-bottom: 5px; /* Reduced space between items */
+}
+
+/* Specific styles for download links */
+.download-link {
+    display: inline-block; /* Makes links behave like buttons */
+    padding: 8px 12px; /* Padding for links */
+    border: 1px solid #007bff; /* Border to create a button effect */
+    border-radius: 4px; /* Rounded corners */
+    background-color: #f8f9fa; /* Light background for contrast */
+    color: #007bff; /* Link color */
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
+}
+
+/* Change background and color on hover for download links */
+.download-link:hover {
+    background-color: #007bff; /* Change background to blue */
+    color: white; /* Change text color to white */
+}
+
+.loading-indicator {
+    text-align: center;
     margin-top: 20px;
-    display: none; 
+}
+
+.spinner {
+    border: 5px solid #f3f3f3; /* Light grey */
+    border-top: 5px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 30px; /* Spinner size */
+    height: 30px; /* Spinner size */
+    animation: spin 1s linear infinite; /* Animation for spinning effect */
+    margin: 0 auto; /* Center the spinner */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }

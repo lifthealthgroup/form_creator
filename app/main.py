@@ -16,7 +16,7 @@ def validate_columns(master, file):
     Validate that if any row in each dictionary (for each form) is filled, all subsequent rows must also be filled. 
     """
     
-    error_messages = [] # store error messages
+    error_messages = [] # to store all error messages
     
     # WHODAS files have a series of optional entries. They can either all be empty or all be full. This is validated here.
     whodas_empties = {}
@@ -25,6 +25,7 @@ def validate_columns(master, file):
 
     # perform check for each dictionary
     for dict_name, inner_dict in master.items():
+        
         # special check for optional WHODAS columns
         if dict_name == 'WHODAS' or dict_name == 'WHODASKIDS':     
             has_filled = any(not pd.isna(inner_dict[key]) for key in whodas_empties[dict_name] if key in inner_dict) # filled optional entries
@@ -34,7 +35,7 @@ def validate_columns(master, file):
             if has_filled and has_empty:
                 for key in whodas_empties[dict_name]: 
                     if key in inner_dict and pd.isna(inner_dict[key]): # attain empty key names
-                        error_messages.append(f"In column '{dict_name}', in file '{file}', the field for '{key}' is empty")
+                        error_messages.append(f"In column '{dict_name}', the field for '{key}' is empty")
         
         # other dictionaries have optional columns without the need for further logic
         optional = {}
@@ -50,7 +51,7 @@ def validate_columns(master, file):
         for key, item in inner_dict.items():
             if key not in whodas_empties['WHODAS'] and key not in whodas_empties['WHODASKIDS']: # checks already performed for optional WHODAS columns
                 if pd.isna(item):
-                    error_messages.append(f"In column '{dict_name}', in file '{file}', the field for '{key}' is empty")                 
+                    error_messages.append(f"In column '{dict_name}', the field for '{key}' is empty")                 
     
     return error_messages
 
@@ -828,7 +829,7 @@ def upload_files():
 
     # Create an in-memory zip file
     memory_file = io.BytesIO()
-    errors = []
+    errors = {}
     
     with zipfile.ZipFile(memory_file, 'w') as zf:
         for file in files:
@@ -840,10 +841,12 @@ def upload_files():
                 master = read_excel(file.stream)  # Function to read the Excel file
                 
                 # Validate the file contents
-                errors.extend(validate_columns(master, file.filename))  # Updated validation that allows trailing empty rows
+                error_list = validate_columns(master, file.filename)
+                if error_list:
+                    errors[file.filename] = error_list  # Updated validation that allows trailing empty rows
                 
                 try: # use try in case validation misses an error
-                    if not errors: # prevent errors
+                    if all(not lst for lst in errors.values()): # prevent errors
                         final_document = produce_output(master)  # Function to generate the PDF from the DataFrame
 
                         # Store the PDF in memory
@@ -859,15 +862,13 @@ def upload_files():
 
 
     memory_file.seek(0)  # Reset the in-memory zip file position
-
+    
     if errors:
-        temp = errors
-        errors = []
-        return jsonify({"errors": temp}), 400
+        return jsonify({"errors": errors}), 400
     else:
         # Return the zip file as a downloadable response
         return send_file(memory_file, download_name='processed_files.zip', as_attachment=True)
-
+    
 @app.route('/download-form/<form_name>')
 def download_form(form_name):
     """

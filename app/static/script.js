@@ -62,8 +62,14 @@ document.getElementById('upload-form').addEventListener('submit', function(event
             return response.json().then(err => {
                 // Hide loading indicator on error
                 loadingIndicator.style.display = 'none'; 
+                
+                // Construct error messages from the dictionary
+                let errorMessage = "";
+                for (const [filename, messages] of Object.entries(err.errors)) {
+                    errorMessage += `Errors in ${filename}:\n${messages.join('\n')}\n`;
+                }
                 // Show alert with error messages
-                alert("Error: \n" + err.errors.join("\n"));
+                alert(errorMessage);
             });
         }
         return response.blob();  // Handle success

@@ -13,3 +13,6 @@ venv/
 # Environment files
 .env
 *.env
+
+# Testing
+testing/

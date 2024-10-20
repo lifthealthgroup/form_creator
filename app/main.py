@@ -98,6 +98,7 @@ def read_excel(excel):
             master[dict_name] = pd.Series(valid_values.values, index=valid_indices).to_dict() # place dictionary in dictionary
             master[dict_name] = {k:int(v) if isinstance(v, float) and not math.isnan(v) else v for k, v in master[dict_name].items()} # convert values to integers where possible 
             master[dict_name] = {int(k) if isinstance(k, float) and not math.isnan(k) else k: int(v) if isinstance(v, float) and not math.isnan(v) else v for k, v in master[dict_name].items()} # convert key to integer if float
+    
     temp = master['GENERAL'].copy() # to iterate over so master['GENERAL'] can change
         
     for key, item in temp.items(): # all GENERAL columns to be accounted for, replaced with empty strings if no values entered.
@@ -836,9 +837,12 @@ def upload_files():
             if file and file.filename.endswith('.xlsx'):
                 # Ensure the filename is secure
                 filename = secure_filename(file.filename)
-
-                # Read the Excel file
-                master = read_excel(file.stream)  # Function to read the Excel file
+                try:
+                    # Read the Excel file
+                    master = read_excel(file.stream)  # Function to read the Excel file
+                except Exception:
+                    errors[file.filename] = [f"There is an issue with {file.filename}. Please ensure the correct template has been used. If errors reoccur, redownload the template and try again."]
+                    return jsonify({"errors": errors}), 400
                 
                 # Validate the file contents
                 error_list = validate_columns(master, file.filename)
@@ -858,7 +862,7 @@ def upload_files():
                         pdf_filename = filename.replace('.xlsx', '')
                         zf.writestr(f'{pdf_filename}.pdf', pdf_stream.read())
                 except Exception:
-                    errors = [f"There is an issue with {file.filename}. Please ensure the correct template has been used. If errors reoccur, redownload the template and try again."]
+                    errors[file.filename] = [f"There is an issue with {file.filename}. Please ensure the correct template has been used. If errors reoccur, redownload the template and try again."]
 
 
     memory_file.seek(0)  # Reset the in-memory zip file position

@@ -91,3 +91,9 @@ document.getElementById('upload-form').addEventListener('submit', function(event
         loadingIndicator.style.display = 'none';  // Hide loading indicator on fetch error
     });
 });
+
+// Toggle visibility of form links
+document.getElementById('formHeader').addEventListener('click', function() {
+    const formLinks = document.getElementById('formLinks');
+    formLinks.style.display = formLinks.style.display === 'grid' ? 'none' : 'grid';
+});

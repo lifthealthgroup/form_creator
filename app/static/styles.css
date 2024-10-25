@@ -1,5 +1,5 @@
 * {
-    box-sizing: border-box; /* Include padding and border in element's total width and height */
+    box-sizing: border-box;
 }
 
 body {
@@ -11,7 +11,7 @@ body {
 }
 
 .container {
-    max-width: 600px;
+    max-width: 800px; /* Container width remains increased */
     margin: 50px auto;
     padding: 20px;
     background: white;
@@ -23,14 +23,83 @@ h1 {
     text-align: center;
 }
 
+.introduction p {
+    margin: 10px 0;
+}
+
+.form-section {
+    margin-top: 20px;
+}
+
+.form-header {
+    cursor: pointer;
+    color: #007bff;
+    text-align: center;
+    padding: 10px 15px; /* Add horizontal padding */
+    background-color: #f0f0f0; /* Light background color */
+    border: 1px solid #ccc; /* Light border */
+    border-radius: 4px; /* Slightly rounded corners */
+    transition: background-color 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    margin-bottom: 10px; /* Space below the tab */
+}
+
+.form-header:hover {
+    background-color: #e0e0e0; /* Darker background on hover */
+}
+
+.form-links {
+    display: none; /* Hidden by default */
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.download-link {
+    display: inline-block;
+    padding: 5px 10px; /* Narrower padding for compact button size */
+    background-color: #f8f9fa;
+    color: #007bff;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    text-align: center;
+    text-decoration: none; /* Remove underline */
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.download-link:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.template-download {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.download-btn {
+    display: inline-block;
+    padding: 8px 16px; /* Narrower padding for compact button size */
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.download-btn:hover {
+    background: #0056b3;
+}
+
 .file-input {
-    display: none; /* Keep this hidden */
+    display: none;
 }
 
 .upload-btn {
     display: block;
     width: 100%;
-    padding: 10px;
+    padding: 12px 16px; /* Narrower padding */
     border: none;
     background: #28a745;
     color: white;
@@ -44,23 +113,19 @@ h1 {
     background: #218838;
 }
 
-.template-download {
-    text-align: center;
-    margin: 20px 0;
-}
-
-.download-btn {
-    display: inline-block;
-    padding: 10px 20px;
+.choose-files-btn {
+    display: block;
+    width: 100%;
+    padding: 8px 16px; /* Narrower padding */
+    border: none;
     background: #007bff;
     color: white;
-    text-decoration: none;
+    font-size: 18px;
     border-radius: 5px;
-    margin-top: 10px; /* Space above the button */
-}
-
-.download-btn:hover {
-    background: #0056b3;
+    cursor: pointer;
+    margin: 20px 0;
+    text-align: center;
+    transition: background 0.3s ease;
 }
 
 .file-preview {
@@ -108,63 +173,8 @@ h1 {
     box-shadow: 0 0 0 2px rgba(255, 77, 77, 0.5); /* Add a subtle focus outline */
 }
 
-.file-item:hover {
-    background-color: #e9e9e9;
-}
-
-.choose-files-btn {
-    display: block;
-    width: 100%; /* Full width */
-    padding: 15px;
-    border: none;
-    background: #007bff; 
-    color: white;
-    font-size: 18px;
-    border-radius: 5px;
-    cursor: pointer;
-    margin: 20px 0;
-    text-align: center;
-    transition: background 0.3s ease;
-}
-
 .choose-files-btn:hover {
-    background: #0056b3; 
-}
-
-/* General link styles */
-a {
-    text-decoration: none; /* Remove underline */
-    color: #007bff; /* Set link color */
-    transition: color 0.3s ease, background-color 0.3s ease; /* Smooth transition for hover effects */
-}
-
-/* Remove bullet points from the list */
-ul {
-    list-style-type: none; /* Remove default bullet points */
-    padding: 0; /* Remove padding */
-    margin: 0; /* Remove margin */
-}
-
-/* Style for each list item */
-ul li {
-    margin-bottom: 5px; /* Reduced space between items */
-}
-
-/* Specific styles for download links */
-.download-link {
-    display: inline-block; /* Makes links behave like buttons */
-    padding: 8px 12px; /* Padding for links */
-    border: 1px solid #007bff; /* Border to create a button effect */
-    border-radius: 4px; /* Rounded corners */
-    background-color: #f8f9fa; /* Light background for contrast */
-    color: #007bff; /* Link color */
-    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
-}
-
-/* Change background and color on hover for download links */
-.download-link:hover {
-    background-color: #007bff; /* Change background to blue */
-    color: white; /* Change text color to white */
+    background: #0056b3;
 }
 
 .loading-indicator {
@@ -173,13 +183,13 @@ ul li {
 }
 
 .spinner {
-    border: 5px solid #f3f3f3; /* Light grey */
-    border-top: 5px solid #3498db; /* Blue */
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
     border-radius: 50%;
-    width: 30px; /* Spinner size */
-    height: 30px; /* Spinner size */
-    animation: spin 1s linear infinite; /* Animation for spinning effect */
-    margin: 0 auto; /* Center the spinner */
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
 }
 
 @keyframes spin {

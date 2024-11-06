@@ -13,7 +13,8 @@ The **Medical Assessment PDF Generator** is a web application that simplifies th
 
 The following forms are included in the application:
 
-- World Health Organization Disability Assessment Schedule (WHODAS)
+- World Health Organization Disability Assessment Schedule (WHODAS 2.0)
+- World Health Organization Disability Assessment Schedule Child and Adolescents (WHODAS 2.0 Child and Adolescent)
 - Care and Needs Scale (CANS)
 - Life Skills Profile (LSP)
 - Lawton Instrumental Activities of Daily Living (LAWTON)
@@ -21,6 +22,7 @@ The following forms are included in the application:
 - Lower Extremity Functional Scale (LEFS)
 - Falls Risk Assessment Tool (FRAT)
 - Health of the Nation Outcome Scales (HONOS)
+- Child and Adolescent Scale of Participation (CASP)
 
 ## Technologies Used
 

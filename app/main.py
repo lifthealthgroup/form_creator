@@ -68,7 +68,7 @@ def render_to_image(filled_form):
         page = filled_form[page_number]
         
         # Render page to an image
-        pix = page.get_pixmap(matrix=fitz.Matrix(3,3))  # Zoom for better quality
+        pix = page.get_pixmap(matrix=fitz.Matrix(2,2))  # Zoom for better quality
         
         img_pdf = fitz.open()  # New PDF for this page
         img_page = img_pdf.new_page(width=pix.width, height=pix.height)  # Create a new page

@@ -783,6 +783,27 @@ def fill_CASP(general_values:dict, form_values:dict):
     
     return template
     
+def fill_HONOSCA(general_values:dict, form_values:dict):
+    """
+    Inserts values from dictionary in correct fields in HONOS pdf file.
+    """
+    template = fitz.open('forms/HONOSCA.pdf') # read in template pdf  
+
+    total = 0 # track total score
+    A_total = 0 # track A subtotal
+    
+    for i in range(1, 14):
+        A_total += form_values[i]
+    
+    total = A_total + form_values[14] + form_values[15]
+    
+    form_values['total'] = total
+    form_values['A_total'] = A_total
+
+    template = fill_textboxes(general_values, form_values, template)
+    
+    return template
+
 def produce_output(master:dict[dict]):
     """
     Calls form filling function for each dictionary read in from excel and combines pdfs to final file. 
@@ -889,7 +910,8 @@ def download_form(form_name):
         'berg-balance-scale': 'BBS.pdf',
         'frat': 'FRAT.pdf',
         'honos': 'HONOS.pdf',
-        'casp': 'CASP.pdf'
+        'casp': 'CASP.pdf',
+        'honosca':'HONOSCA.pdf'
     }
     
     # Ensure the form exists

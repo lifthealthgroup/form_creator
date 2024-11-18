@@ -34,12 +34,12 @@ function removeFile(index) {
 
 // Open the file dialog when the Choose Files button is clicked
 fileInput.addEventListener('change', function() {
+
+    selectedFiles = [];
+
     // Add the selected files to the list
     for (const file of this.files) {
-        // Check if the file is already in the array to prevent duplicates
-        if (!selectedFiles.some(f => f.name === file.name)) {
-            selectedFiles.push(file);
-        }
+        selectedFiles.push(file);
     }
     updateFilePreview();  // Update the preview
 });
@@ -48,9 +48,12 @@ fileInput.addEventListener('change', function() {
 document.getElementById('upload-form').addEventListener('submit', function(event) {
     event.preventDefault();  // Prevent the form from submitting the default way
 
-    const formData = new FormData(this);  // Create a FormData object
-    const loadingIndicator = document.getElementById('loading-indicator');
+    const formData = new FormData();  // Create a FormData object
 
+    // Add only the files in `selectedFiles` to the FormData
+    selectedFiles.forEach(file => formData.append('files[]', file));
+
+    const loadingIndicator = document.getElementById('loading-indicator');
     loadingIndicator.style.display = 'block';  // Show loading indicator
 
     fetch('/upload', {
@@ -83,6 +86,12 @@ document.getElementById('upload-form').addEventListener('submit', function(event
         document.body.appendChild(a);
         a.click();
         a.remove();
+        
+        // clear queue
+        fileInput.value = '';
+        selectedFiles = [];
+        updateFilePreview();
+        
         
         loadingIndicator.style.display = 'none';  // Hide loading indicator after download
     })

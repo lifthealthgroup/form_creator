@@ -8,6 +8,7 @@ The **Medical Assessment PDF Generator** is a web application that simplifies th
 - **PDF Generation**: Automatically fills out PDF forms based on data extracted from the uploaded Excel files.
 - **Highlighting Capabilities**: Highlights specific areas within the PDF to emphasize important information.
 - **Zip File Download**: Downloads all generated PDFs as a single zip file for ease of access.
+- **Password**: For basic security if you choose to cloud host the software.
 
 ## Supported Forms
 
@@ -58,10 +59,12 @@ Ensure you have the following installed:
 ### Usage
 1. **Run the Flask application:**
    ```
-   python app.py
-2. **Access the application:** Open your web browser and navigate to http://127.0.0.1:5000.
-3. **Upload your Excel files:** Use the provided interface to upload multiple medical assessment forms in Excel format.
-4. **Download the generated PDFs:** After processing, a zip file containing all generated PDFs will be available for download.
+   python main.py
+   ```
+2. **Set the Environment Variable**: Choose a password and save it in a `.env` file with the key `FORM_CREATOR_PASSWORD`.
+4. **Access the application:** Open your web browser and navigate to http://127.0.0.1:5000.
+5. **Upload your Excel files:** Use the provided interface to upload multiple medical assessment forms in Excel format.
+6. **Download the generated PDFs:** After processing, a zip file containing all generated PDFs will be available for download.
 
 ## Contact
 For questions or support, please contact [it@lifthealthgroup.com.au].

@@ -5,10 +5,16 @@ import zipfile
 
 import pandas as pd
 import fitz
-from flask import Flask, request, send_file, render_template, jsonify, send_from_directory
+from flask import Flask, request, send_file, render_template, jsonify, send_from_directory, session
 from werkzeug.utils import secure_filename
+from auth import auth, login_required
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = "your_secret_key"
+app.register_blueprint(auth)
+
 
 def validate_columns(master, file):
     """
@@ -824,6 +830,7 @@ def produce_output(master:dict[dict]):
     return combined
 
 @app.route('/')
+@login_required
 def index():
     """Render the upload page."""
     return render_template('upload.html')

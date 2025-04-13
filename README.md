@@ -64,7 +64,7 @@ Ensure you have the following installed:
 4. **Download the generated PDFs:** After processing, a zip file containing all generated PDFs will be available for download.
 
 ## Contact
-For questions or support, please contact [frank.snelling03@gmail.com].
+For questions or support, please contact [it@lifthealthgroup.com.au].
 
 ## Acknowledgments
 Special thanks to the open-source community for providing invaluable libraries and tools that made this project possible.

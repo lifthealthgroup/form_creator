@@ -1,23 +1,10 @@
-from flask import Blueprint, request, redirect, url_for, session, render_template_string
+from flask import Blueprint, request, redirect, url_for, session, render_template
 from functools import wraps
 import os
 
 PASSWORD = os.getenv("FORM_CREATOR_PASSWORD")
 
 auth = Blueprint("auth", __name__)
-
-login_page = """
-<!doctype html>
-<title>Login</title>
-<h2>Please enter the password</h2>
-<form method="post">
-  <input type="password" name="password">
-  <input type="submit" value="Login">
-</form>
-{% if error %}
-<p style="color:red">{{ error }}</p>
-{% endif %}
-"""
 
 def login_required(f):
     @wraps(f)
@@ -36,4 +23,4 @@ def login():
             return redirect(url_for("index"))
         else:
             error = "Incorrect password"
-    return render_template_string(login_page, error=error)
+    return render_template("login.html", error=error)
